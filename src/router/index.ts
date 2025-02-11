@@ -208,6 +208,36 @@ export const constantRoutes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: "/comment",
+    component: Layouts,
+    redirect: "/comment/list",
+    name: "评论模块",
+    meta: {
+      title: "评论模块",
+      elIcon: "DataBoard"
+    },
+    children: [
+      {
+        path: "list",
+        component: () => import("@/pages/comment/list/index.vue"),
+        name: "评论列表",
+        meta: {
+          title: "评论列表",
+          keepAlive: true
+        }
+      },
+      {
+        path: "vxe-table",
+        component: () => import("@/pages/food/vxe-table/index.vue"),
+        name: "评论管理",
+        meta: {
+          title: "评论管理",
+          keepAlive: true
+        }
+      }
+    ]
+  },
+  {
     path: "/link",
     meta: {
       title: "文档链接",
