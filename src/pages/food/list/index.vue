@@ -5,13 +5,11 @@ import type {
 } from "@@/apis/table/type";
 import type { FormInstance, FormRules } from "element-plus";
 import {
-  deleteTableDataApi,
   exportUserCsvApi,
   exportUserExcelApi,
   exportUserJsonApi,
-  updateTableDataApi,
 } from "@@/apis/table";
-import { getTableDataApi, createTableDataApi, deleteBatchTableDataApi } from "@@/apis/food/index";
+import { getTableDataApi, createTableDataApi, deleteBatchTableDataApi, deleteTableDataApi, updateTableDataApi, } from "@@/apis/food/index";
 import { usePagination } from "@@/composables/usePagination";
 import {
   CirclePlus,

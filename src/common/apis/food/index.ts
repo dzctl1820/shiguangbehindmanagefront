@@ -14,10 +14,11 @@ export function createTableDataApi(data: CreateUserRequestData) {
 /** 删 */
 export function deleteTableDataApi(id: number) {
   return request({
-    url: `/api/admin/user/delete/${id}`,
+    url: `/api/admin/foods/${id}`,
     method: "delete"
   })
 }
+
 export function deleteBatchTableDataApi(ids: number[]) {
   return request({
     url: "/api/admin/foods",
@@ -29,7 +30,7 @@ export function deleteBatchTableDataApi(ids: number[]) {
 /** 改 */
 export function updateTableDataApi(data: Table.CreateOrUpdateTableRequestData) {
   return request({
-    url: `/api/admin/user/update/${data.id}`,
+    url: `/api/admin/foods/${data.id}`,
     method: "post",
     data
   })
