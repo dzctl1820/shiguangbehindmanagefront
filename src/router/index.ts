@@ -187,6 +187,27 @@ export const constantRoutes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: "/feedback",
+    component: Layouts,
+    redirect: "/food/list",
+    name: "用户反馈模块",
+    meta: {
+      title: "用户反馈模块",
+      elIcon: "DataBoard"
+    },
+    children: [
+      {
+        path: "list",
+        component: () => import("@/pages/feedback/list/index.vue"),
+        name: "用户反馈列表",
+        meta: {
+          title: "用户反馈列表",
+          keepAlive: true
+        }
+      },
+    ]
+  },
+  {
     path: "/link",
     meta: {
       title: "文档链接",

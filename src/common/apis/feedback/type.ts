@@ -1,3 +1,21 @@
+export interface CreateOrUpdateTableRequestData {
+  avatarUrl: string
+  id: number
+  username: string
+  gender: number
+  birthday: string
+  role: string
+  nickname: string
+  phone: string
+  email: string
+  status: number
+  createdAt: string
+  updatedAt: string
+  lastLoginTime: string
+  deleted: number
+  password?: string
+}
+
 export interface TableRequestData {
   /** 当前页码 */
   page?: number
