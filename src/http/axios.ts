@@ -103,7 +103,8 @@ function createRequest(instance: AxiosInstance) {
     // 默认配置
     const defaultConfig: AxiosRequestConfig = {
       // 接口地址
-      baseURL: `http://8.137.22.105:800`,
+      // baseURL: `http://8.137.22.105:800`,
+      baseURL: `http://localhost:800`,
       // 请求头
       headers: {
         // 携带 Token
