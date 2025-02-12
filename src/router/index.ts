@@ -228,10 +228,40 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: "vxe-table",
-        component: () => import("@/pages/food/vxe-table/index.vue"),
+        component: () => import("@/pages/comment/vxe-table/index.vue"),
         name: "评论管理",
         meta: {
           title: "评论管理",
+          keepAlive: true
+        }
+      }
+    ]
+  },
+  {
+    path: "/post",
+    component: Layouts,
+    redirect: "/post/list",
+    name: "帖子模块",
+    meta: {
+      title: "帖子模块",
+      elIcon: "DataBoard"
+    },
+    children: [
+      {
+        path: "list",
+        component: () => import("@/pages/post/list/index.vue"),
+        name: "帖子列表",
+        meta: {
+          title: "帖子列表",
+          keepAlive: true
+        }
+      },
+      {
+        path: "vxe-table",
+        component: () => import("@/pages/post/vxe-table/index.vue"),
+        name: "帖子管理",
+        meta: {
+          title: "帖子管理",
           keepAlive: true
         }
       }

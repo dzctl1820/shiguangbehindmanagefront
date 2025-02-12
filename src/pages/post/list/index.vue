@@ -1,100 +1,80 @@
 <script lang="ts" setup>
-import type {
-  CreateOrUpdateTableRequestData,
-  TableData,
-} from "@@/apis/table/type";
-import type { FormInstance, FormRules } from "element-plus";
 import {
-  exportUserCsvApi,
-  exportUserExcelApi,
-  exportUserJsonApi,
-} from "@@/apis/table";
-import { getTableDataApi, createTableDataApi, deleteBatchTableDataApi, deleteTableDataApi, updateTableDataApi, } from "@@/apis/food/index";
-
+  getAllPostsApi,
+  // deleteBatchPostsApi,
+  // deletePostApi,
+  // createPostApi,
+  // updatePostApi,
+  batchDeletePostsApi,
+  exportPostsCsvApi,
+  exportPostsExcelApi,
+  exportPostsJsonApi,
+  handlePostReportApi,
+  batchRecommendPostsApi,
+  getPostReportsApi,
+  getPostsOverviewApi,
+  getDailyPostStatisticsApi,
+  getUserPostRankingApi,
+  syncAllDataToESApi,
+  rebuildESIndexApi,
+  batchPinPostsApi,
+  batchUnhighlightPostsApi,
+  getHotPostsAnalysisApi,
+  getInteractionAnalysisApi,
+  getCategoryStatisticsApi,
+  auditContentApi,
+  detectSensitiveWordsApi,
+  analyzeUserBehaviorApi,
+  analyzeContentTrendsApi,
+  getKeywordAnalysisApi,
+  getQualityDistributionApi,
+} from "@@/apis/post/index";
 import { usePagination } from "@@/composables/usePagination";
-import {
-  CirclePlus,
-  Delete,
-  Download,
-  Refresh,
-  RefreshRight,
-  Search,
-} from "@element-plus/icons-vue";
-import { cloneDeep } from "lodash-es";
-import moment from "moment";
-import { ref } from "vue";
+import { CirclePlus, Delete, Download, Refresh, RefreshRight, Search } from "@element-plus/icons-vue";
+import { ref, reactive } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import * as XLSX from "xlsx";
-
-defineOptions({
-  // 命名当前组件
-  name: "Food_list",
-});
-
-const loading = ref<boolean>(false);
 const { paginationData, handleCurrentChange, handleSizeChange } =
   usePagination();
-
-// #region 新增食品
+// #region 表单数据和字段
 const DEFAULT_FORM_DATA = {
-  id: 0, // 食物ID
-  code: "", // 食物代码
-  name: "", // 食物名称
-  healthLabel: "", // 健康标签
-  healthLight: 0, // 健康等级（0-3）
-  suggest: "", // 建议食用量
-  thumbImageUrl: "", // 缩略图链接
-  largeImageUrl: "", // 大图链接
-  contrastPhotoUrl: "", // 对比图链接
-  isDynamicDish: false, // 是否为动态菜肴
-  liquid: false, // 是否液体
+  id: 0, // 帖子ID
+  userId: 0, // 用户ID
+  channelId: "", // 频道ID
+  channelName: "", // 频道名称
+  content: "", // 内容
+  mediaUrl: "", // 媒体URL
+  tags: "", // 标签（JSON数组格式）
+  likeCount: 0, // 点赞数
+  commentsCount: 0, // 评论数
   createdAt: "", // 创建时间
   updatedAt: "", // 更新时间
-  deleted: 0, // 是否删除（0: 否，1: 是）
+  isDelete: 0, // 是否删除（0=否，1=是）
+  countyId: 0, // 区县Id
+  cityId: 0, // 市Id
+  provinceId: 0, // 省份Id
 };
 
 const dialogVisible = ref<boolean>(false);
 const formRef = ref<FormInstance | null>(null);
+const formData = ref({ ...DEFAULT_FORM_DATA });
 
-const formData = ref({
-  id: 0,
-  code: "",
-  name: "",
-  healthLabel: "",
-  healthLight: 0,
-  suggest: "",
-  thumbImageUrl: "",
-  largeImageUrl: "",
-  contrastPhotoUrl: "",
-  isDynamicDish: false,
-  liquid: false,
-  createdAt: "",
-  updatedAt: "",
-  deleted: 0,
-});
-
-const formRules: FormRules<CreateOrUpdateTableRequestData> = {
-  username: [{ required: true, trigger: "blur", message: "请输入用户名" }],
-  password: [{ required: true, trigger: "blur", message: "请输入密码" }],
+const formRules = {
+  content: [{ required: true, trigger: "blur", message: "请输入帖子内容" }],
+  channelName: [{ required: true, trigger: "blur", message: "请输入频道名称" }],
 };
 
-// sat判断是增还是改
 let sat = false;
+// #endregion
 
-// 格式化函数
-function formatDate1(date: Date) {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const day = date.getDate().toString().padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
+// #region 新增帖子
 function handleCreate() {
   resetForm();
   sat = false;
   dialogVisible.value = true;
 }
 
-// 提交新增或修改食物
+// 提交新增或修改帖子
 function handleCreateOrUpdate() {
   dialogVisible.value = true;
   formRef.value?.validate((valid) => {
@@ -104,23 +84,8 @@ function handleCreateOrUpdate() {
     }
     loading.value = true;
 
-    const api = !sat ? createTableDataApi : updateTableDataApi;
-    const requestData = {
-      id: formData.value.id,
-      code: formData.value.code,
-      name: formData.value.name,
-      healthLabel: formData.value.healthLabel,
-      healthLight: formData.value.healthLight,
-      suggest: formData.value.suggest,
-      thumbImageUrl: formData.value.thumbImageUrl,
-      largeImageUrl: formData.value.largeImageUrl,
-      contrastPhotoUrl: formData.value.contrastPhotoUrl,
-      isDynamicDish: formData.value.isDynamicDish,
-      liquid: formData.value.liquid,
-      createdAt: formData.value.createdAt,
-      updatedAt: formData.value.updatedAt,
-      deleted: formData.value.deleted,
-    };
+    const api = !sat ? createPostApi : updatePostApi;
+    const requestData = { ...formData.value };
 
     api(requestData)
       .then(() => {
@@ -140,25 +105,25 @@ function handleCreateOrUpdate() {
 // 重置表单数据
 function resetForm() {
   formRef.value?.clearValidate();
-  formData.value = cloneDeep(DEFAULT_FORM_DATA);
+  formData.value = { ...DEFAULT_FORM_DATA };
 }
 // #endregion
 
-// #region 删
+// #region 删除操作
+const selectedRows = ref<TableData[]>([]);
+
 function handleDelete(row: TableData) {
-  ElMessageBox.confirm(`正在删除用户：${row.username}，确认删除？`, "提示", {
+  ElMessageBox.confirm(`正在删除帖子：${row.content}，确认删除？`, "提示", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
     type: "warning",
   }).then(() => {
-    deleteTableDataApi(row.id).then(() => {
+    deletePostApi(row.id).then(() => {
       ElMessage.success("删除成功");
       getTableData();
     });
   });
 }
-
-const selectedRows = ref<TableData[]>([]);
 
 function handleBatchDelete() {
   if (selectedRows.value.length === 0) {
@@ -166,8 +131,9 @@ function handleBatchDelete() {
     return;
   }
 
+  const postTitles = selectedRows.value.map((row) => row.content).join(", ");
   ElMessageBox.confirm(
-    `确定要删除 ${selectedRows.value.length} 项吗？`,
+    `确定要删除 ${selectedRows.value.length} 项帖子: ${postTitles} 吗？`,
     "提示",
     {
       confirmButtonText: "确定",
@@ -176,8 +142,7 @@ function handleBatchDelete() {
     }
   ).then(() => {
     const ids = selectedRows.value.map((row) => row.id);
-    console.log(ids);
-    deleteBatchTableDataApi(ids).then(() => {
+    batchDeletePostsApi(ids).then(() => {
       ElMessage.success("删除成功");
       getTableData(); // 重新加载数据
       selectedRows.value = []; // 清空选中项
@@ -190,41 +155,33 @@ function handleSelectionChange(rows: TableData[]) {
 }
 // #endregion
 
-// #region 改
-function handleUpdate(row: TableData) {
-  sat = true;
-  console.log("开始修改");
-  dialogVisible.value = true;
-  formData.value = cloneDeep(row);
-}
-// #endregion
-
-// #region 查
+// #region 查询
 const tableData = ref<TableData[]>([]);
-const searchFormRef = ref<FormInstance | null>(null);
-const searchData = reactive({
+  const searchData = reactive({
   keyword: "",
+  channelName: "", // 可以扩展更多条件
 });
+
+const loading = ref(false);
 
 function getTableData() {
   loading.value = true;
-  getTableDataApi({
-    page: paginationData.currentPage || 1, // 确保传递正确的当前页
-    size: paginationData.pageSize || 10, // 确保传递每页条数
-    keyword: searchData.keyword || undefined,
-  })
+  getAllPostsApi(
+    paginationData.currentPage || 1,  // 当前页
+    paginationData.pageSize || 10,    // 每页条数
+    searchData.keyword || undefined   // 关键词（可选）
+  )
     .then(({ data }) => {
       paginationData.total = data.total;
-      console.log(data.records[0].id);
       tableData.value = data.records.map((item) => ({
         ...item,
         id: item.id.toString(),
-        // 可以根据接口的返回字段进行映射
-        healthLight: item.healthLight || 0, // 默认为 0
-        healthLabel: item.healthLabel || "未定义",
-        thumbImageUrl: item.thumbImageUrl || "", // 确保有缩略图
-        suggest: item.suggest || "无建议",
-        isLiquid: item.isLiquid ? "是" : "否",
+        channelName: item.channelName || "未定义",
+        mediaUrl: item.mediaUrl || "",
+        likeCount: item.likeCount || 0,
+        commentsCount: item.commentsCount || 0,
+        createdAt: item.createdAt || "",
+        updatedAt: item.updatedAt || "",
       }));
     })
     .catch(() => {
@@ -235,34 +192,26 @@ function getTableData() {
     });
 }
 
-let wait = "nickname";
-function updateWait(a: any) {
-  const phoneRegex = /^1[3-9]\d{9}$/;
-  // 检查 a 是否为字符串，并且是否符合手机号码的正则表达式
-  if (typeof a === "string" && phoneRegex.test(a)) {
-    wait = "phone";
-  }
-  const emailRegex = /^[\w.%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
-
-  // 检查是否符合正则表达式
-  if (typeof a === "string" && emailRegex.test(a)) {
-    wait = "email"; // 邮箱符合规范
-  }
-}
 function handleSearch() {
-  updateWait(searchData.keyword);
   paginationData.currentPage === 1
     ? getTableData()
     : (paginationData.currentPage = 1);
 }
+
 function resetSearch() {
   searchData.keyword = "";
   handleSearch();
 }
 // #endregion
 
-// 导出不同格式
+// 改进导出为CSV格式的函数
 function exportToCsv(filename: string, data: any[]) {
+  // 确保数据是有效的
+  if (data.length === 0) {
+    ElMessage.error("没有数据可导出");
+    return;
+  }
+
   const csvContent = data.map((row) => Object.values(row).join(",")).join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
@@ -277,14 +226,24 @@ function exportToCsv(filename: string, data: any[]) {
   }
 }
 
+// 改进导出为Excel格式的函数
 function exportToExcel(filename: string, data: any[]) {
+  if (data.length === 0) {
+    ElMessage.error("没有数据可导出");
+    return;
+  }
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
   XLSX.writeFile(workbook, filename);
 }
 
+// 改进导出为JSON格式的函数
 function exportToJson(filename: string, data: any[]) {
+  if (data.length === 0) {
+    ElMessage.error("没有数据可导出");
+    return;
+  }
   const jsonContent = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonContent], {
     type: "application/json;charset=utf-8;",
@@ -301,10 +260,11 @@ function exportToJson(filename: string, data: any[]) {
   }
 }
 
+// 导出功能改进
 function handleExport() {
   const selectedOption = ref<string | null>(null);
 
-  ElMessageBox.prompt("", "导出", {
+  ElMessageBox.prompt("请输入导出格式", "导出", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
     inputPattern: /^(CSV|Excel|JSON)$/i,
@@ -321,12 +281,31 @@ function handleExport() {
     },
   })
     .then(() => {
+      // 在选择CSV、Excel或JSON后，根据选项导出数据
       if (selectedOption.value === "CSV") {
-        exportToCsv("users.csv", tableData.value);
+        exportPostsCsvApi().then((res) => {
+          if (res.data) {
+            exportToCsv("posts.csv", res.data);
+          } else {
+            ElMessage.error("CSV导出失败，未获取到数据");
+          }
+        });
       } else if (selectedOption.value === "Excel") {
-        exportToExcel("users.xlsx", tableData.value);
+        exportPostsExcelApi().then((res) => {
+          if (res.data) {
+            exportToExcel("posts.xlsx", res.data);
+          } else {
+            ElMessage.error("Excel导出失败，未获取到数据");
+          }
+        });
       } else if (selectedOption.value === "JSON") {
-        exportToJson("users.json", tableData.value);
+        exportPostsJsonApi().then((res) => {
+          if (res.data) {
+            exportToJson("posts.json", res.data);
+          } else {
+            ElMessage.error("JSON导出失败，未获取到数据");
+          }
+        });
       } else {
         ElMessage.info("导出操作已取消");
       }
@@ -335,6 +314,8 @@ function handleExport() {
       ElMessage.info("导出操作已取消");
     });
 }
+
+// #endregion
 watch(
   [() => paginationData.currentPage, () => paginationData.pageSize],
   () => {
@@ -351,7 +332,7 @@ watch(
         <el-form-item :prop="wait" label="关键字">
           <el-input
             v-model="searchData.keyword"
-            placeholder="请输入邮箱/手机号/昵称"
+            placeholder="请输入标题/内容"
           />
         </el-form-item>
         <el-form-item>
@@ -366,7 +347,7 @@ watch(
       <div class="toolbar-wrapper">
         <div>
           <el-button type="primary" :icon="CirclePlus" @click="handleCreate">
-            新增食品
+            新增帖子
           </el-button>
           <el-button type="danger" :icon="Delete" @click="handleBatchDelete">
             批量删除
@@ -394,77 +375,39 @@ watch(
       <div class="table-wrapper">
         <el-table :data="tableData" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="40" align="center" />
-          <!-- 食物ID -->
+          <!-- 帖子ID -->
           <el-table-column
             prop="id"
-            label="食物ID"
+            label="帖子ID"
             width="120"
             align="center"
           />
-
-          <!-- 食物代码 -->
+          <!-- 频道名称 -->
           <el-table-column
-            prop="code"
-            label="食物代码"
+            prop="channelName"
+            label="频道名称"
             width="180"
             align="center"
           />
-          <!-- 食物图片 -->
+          <!-- 内容 -->
           <el-table-column
-            prop="thumbImageUrl"
-            label="食物图片"
-            width="120"
-            align="center"
-          >
-            <template #default="scope">
-              <el-image
-                :src="scope.row.thumbImageUrl"
-                fit="contain"
-                style="width: 80px; height: 80px"
-              />
-            </template>
-          </el-table-column>
-
-          <!-- 食物名称 -->
-          <el-table-column
-            prop="name"
-            label="食物名称"
-            width="200"
+            prop="content"
+            label="帖子内容"
+            width="500"
             align="center"
           />
-
-          <!-- 健康标签 -->
+          <!-- 点赞数 -->
           <el-table-column
-            prop="healthLabel"
-            label="健康标签"
-            width="120"
-            align="center"
-          >
-            <template #default="scope">
-              <span
-                :class="{
-                  'text-green-500': scope.row.healthLight === 1,
-                  'text-yellow-500': scope.row.healthLight === 2,
-                  'text-red-500': scope.row.healthLight === 3,
-                }"
-                >{{ scope.row.healthLabel }}</span
-              >
-            </template>
-          </el-table-column>
-
-          <!-- 建议食用量 -->
-          <el-table-column
-            prop="suggest"
-            label="建议食用量"
+            prop="likeCount"
+            label="点赞数"
             width="120"
             align="center"
           />
-
-          <!-- 创建时间 -->
+          <!-- 评论数 -->
           <el-table-column
-            prop="isLiquid"
-            label="是否为液体"
-            width="180"
+            prop="commentsCount"
+            label="评论数"
+            width="120"
             align="center"
           />
           <!-- 创建时间 -->
@@ -474,7 +417,6 @@ watch(
             width="180"
             align="center"
           />
-
           <!-- 更新时间 -->
           <el-table-column
             prop="updatedAt"
@@ -528,7 +470,7 @@ watch(
     <!-- 新增/修改 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="!sat ? '新增食品' : '修改食品'"
+      :title="!sat ? '新增帖子' : '修改帖子'"
       width="30%"
       @closed="resetForm"
     >
@@ -538,70 +480,37 @@ watch(
         label-width="100px"
         label-position="left"
       >
-        <el-form-item prop="code" label="食物代码">
-          <el-input v-model="formData.code" placeholder="请输入食物代码" />
+        <el-form-item prop="channelName" label="频道名称">
+          <el-input v-model="formData.channelName" placeholder="请输入频道名称" />
         </el-form-item>
 
-        <el-form-item prop="name" label="食物名称">
-          <el-input v-model="formData.name" placeholder="请输入食物名称" />
+        <el-form-item prop="content" label="帖子内容">
+          <el-input v-model="formData.content" placeholder="请输入帖子内容" />
         </el-form-item>
 
-        <el-form-item prop="healthLabel" label="健康标签">
-          <el-input
-            v-model="formData.healthLabel"
-            placeholder="请输入健康标签"
+        <el-form-item prop="mediaUrl" label="媒体URL">
+          <el-input v-model="formData.mediaUrl" placeholder="请输入媒体URL" />
+        </el-form-item>
+
+        <el-form-item prop="tags" label="标签">
+          <el-input v-model="formData.tags" placeholder="请输入标签" />
+        </el-form-item>
+
+        <el-form-item prop="likeCount" label="点赞数">
+          <el-input-number
+            v-model="formData.likeCount"
+            :min="0"
+            label="点赞数"
+            placeholder="请输入点赞数"
           />
         </el-form-item>
 
-        <el-form-item prop="healthLight" label="健康等级">
-          <el-select
-            v-model="formData.healthLight"
-            placeholder="请选择健康等级"
-          >
-            <el-option label="绿灯（健康）" :value="1" />
-            <el-option label="黄灯（适量）" :value="2" />
-            <el-option label="红灯（不推荐）" :value="3" />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item prop="suggest" label="建议食用量">
-          <el-input v-model="formData.suggest" placeholder="请输入建议食用量" />
-        </el-form-item>
-
-        <el-form-item prop="thumbImageUrl" label="缩略图">
-          <el-input
-            v-model="formData.thumbImageUrl"
-            placeholder="请输入缩略图URL"
-          />
-        </el-form-item>
-
-        <el-form-item prop="largeImageUrl" label="大图链接">
-          <el-input
-            v-model="formData.largeImageUrl"
-            placeholder="请输入大图URL"
-          />
-        </el-form-item>
-
-        <el-form-item prop="contrastPhotoUrl" label="对比图链接">
-          <el-input
-            v-model="formData.contrastPhotoUrl"
-            placeholder="请输入对比图URL"
-          />
-        </el-form-item>
-
-        <el-form-item prop="isDynamicDish" label="是否为动态菜肴">
-          <el-switch
-            v-model="formData.isDynamicDish"
-            active-text="是"
-            inactive-text="否"
-          />
-        </el-form-item>
-
-        <el-form-item prop="liquid" label="是否液体">
-          <el-switch
-            v-model="formData.liquid"
-            active-text="是"
-            inactive-text="否"
+        <el-form-item prop="commentsCount" label="评论数">
+          <el-input-number
+            v-model="formData.commentsCount"
+            :min="0"
+            label="评论数"
+            placeholder="请输入评论数"
           />
         </el-form-item>
 
@@ -618,6 +527,14 @@ watch(
             v-model="formData.updatedAt"
             type="datetime"
             placeholder="选择更新时间"
+          />
+        </el-form-item>
+
+        <el-form-item prop="isDelete" label="是否删除">
+          <el-switch
+            v-model="formData.isDelete"
+            active-text="是"
+            inactive-text="否"
           />
         </el-form-item>
       </el-form>
@@ -656,5 +573,15 @@ watch(
 .pager-wrapper {
   display: flex;
   justify-content: flex-end;
+}
+
+.el-dialog {
+  .el-form-item {
+    margin-bottom: 20px;
+  }
+
+  .el-button {
+    margin-right: 10px;
+  }
 }
 </style>

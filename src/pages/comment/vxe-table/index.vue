@@ -13,28 +13,20 @@ import {
   deleteTableDataApi,
   createTableDataApi,
   updateTableDataApi,
-} from "@@/apis/table";
-import { getTableDataApi } from "@@/apis/food/index";
+} from "@@/apis/comment/index"; // 修改为comment相关的API
+import { getTableDataApi } from "@@/apis/comment/index"; // 修改为comment相关的API
 
 defineOptions({
-  name: "Food_Table",
+  name: "Comment_Table",
 });
 
 // #region vxe-grid
-interface FoodMeta {
+interface CommentMeta {
   id: number;
-  code: string;
-  name: string;
-  healthLabel: string;
-  healthLight: number;
-  suggest: string;
-  thumbImageUrl: string;
-  largeImageUrl: string;
-  contrastPhotoUrl: string | null;
-  isDynamicDish: boolean;
-  isLiquid: boolean;
-  isAvailable: boolean | null;
-  prompt: string | null;
+  postId: number;
+  userId: number;
+  content: string;
+  parentId: number | null;
   createdAt: string;
   updatedAt: string;
   deleted: number;
@@ -42,7 +34,7 @@ interface FoodMeta {
 }
 
 const xGridDom = ref<VxeGridInstance>();
-const selectedRows = ref<FoodMeta[]>([]);
+const selectedRows = ref<CommentMeta[]>([]);
 
 const xGridOpt: VxeGridProps = reactive({
   loading: true,
@@ -56,51 +48,9 @@ const xGridOpt: VxeGridProps = reactive({
   },
   columns: [
     { type: "checkbox", width: "50px" },
-    { field: "code", title: "食物代码", width: "180px" },
-    { field: "name", title: "食物名称", width: "200px" },
-    {
-      field: "healthLabel",
-      title: "健康标签",
-      width: "150px",
-      slots: {
-        default: ({ row }: { row: FoodMeta }) => {
-          return [
-            h(
-              "span",
-              {
-                class: {
-                  "text-green-500": row.healthLight === 1,
-                  "text-yellow-500": row.healthLight === 2,
-                  "text-red-500": row.healthLight === 3,
-                },
-              },
-              row.healthLabel
-            ),
-          ];
-        },
-      },
-    },
-    { field: "suggest", title: "建议食用量", width: "150px" },
-    {
-      field: "thumbImageUrl",
-      title: "食物图片",
-      width: "120px",
-      slots: {
-        default: ({ row }: { row: FoodMeta }) => {
-          return h("img", {
-            src: row.thumbImageUrl,
-            style: "width: 60px; height: 60px; object-fit: contain;",
-          });
-        },
-      },
-    },
-    {
-      field: "isLiquid",
-      title: "是否液体",
-      width: "100px",
-      formatter: ({ cellValue }: { cellValue: boolean }) =>
-        cellValue ? "是" : "否",
-    },
+    { field: "postId", title: "文章ID", width: "180px" },
+    { field: "userId", title: "用户ID", width: "150px" },
+    { field: "content", title: "评论内容", width: "550px" },
     { field: "createdAt", title: "创建时间", width: "180px" },
     { field: "updatedAt", title: "更新时间", width: "180px" },
     {
@@ -121,7 +71,7 @@ const xGridOpt: VxeGridProps = reactive({
         xGridOpt.loading = true;
         return new Promise((resolve) => {
           let total = 0;
-          let result: FoodMeta[] = [];
+          let result: CommentMeta[] = [];
 
           getTableDataApi({
             size: page.pageSize,
@@ -167,55 +117,30 @@ const xFormOpt: VxeFormProps = reactive({
   titleColon: false,
   data: {
     id: 0,
-    code: "",
-    name: "",
-    healthLabel: "",
-    healthLight: 0,
-    suggest: "",
-    thumbImageUrl: "",
-    largeImageUrl: "",
-    contrastPhotoUrl: null,
-    isDynamicDish: false,
-    isLiquid: false,
-    isAvailable: null,
-    prompt: null,
+    postId: 0,
+    userId: 0,
+    content: "",
+    parentId: null,
     createdAt: "",
     updatedAt: "",
+    deleted: 0,
   },
   items: [
-    { field: "code", title: "食物代码", itemRender: { name: "$input" } },
-    { field: "name", title: "食物名称", itemRender: { name: "$input" } },
-    { field: "healthLabel", title: "健康标签", itemRender: { name: "$input" } },
+    { field: "postId", title: "文章ID", itemRender: { name: "$input" } },
+    { field: "userId", title: "用户ID", itemRender: { name: "$input" } },
+    { field: "content", title: "评论内容", itemRender: { name: "$input" } },
     {
-      field: "healthLight",
-      title: "健康等级",
-      itemRender: {
-        name: "$select",
-        options: [
-          { label: "绿灯（健康）", value: 1 },
-          { label: "黄灯（适量）", value: 2 },
-          { label: "红灯（不推荐）", value: 3 },
-        ],
-      },
-    },
-    { field: "suggest", title: "建议食用量", itemRender: { name: "$input" } },
-    { field: "thumbImageUrl", title: "缩略图", itemRender: { name: "$input" } },
-    {
-      field: "largeImageUrl",
-      title: "大图链接",
+      field: "parentId",
+      title: "父评论ID",
       itemRender: { name: "$input" },
     },
+    { field: "createdAt", title: "创建时间", itemRender: { name: "$input" } },
+    { field: "updatedAt", title: "更新时间", itemRender: { name: "$input" } },
     {
-      field: "contrastPhotoUrl",
-      title: "对比图",
-      itemRender: { name: "$input" },
-    },
-    {
-      field: "isDynamicDish",
-      title: "是否动态菜肴",
+      field: "deleted",
+      title: "是否删除",
       itemRender: { name: "$switch" },
     },
-    { field: "isLiquid", title: "是否液体", itemRender: { name: "$switch" } },
   ],
 });
 // #endregion
@@ -223,8 +148,8 @@ const xFormOpt: VxeFormProps = reactive({
 // #region 增删改查
 const crudStore = reactive({
   commitQuery: () => xGridDom.value?.commitProxy("query"),
-  onShowModal: (row?: FoodMeta) => {
-    xModalOpt.title = row ? "修改食品" : "新增食品";
+  onShowModal: (row?: CommentMeta) => {
+    xModalOpt.title = row ? "修改评论" : "新增评论";
     xModalDom.value?.open();
     nextTick(() => {
       if (!row) xFormDom.value?.reset();
@@ -235,7 +160,7 @@ const crudStore = reactive({
     xModalDom.value?.close();
     crudStore.commitQuery();
   },
-  onDelete: (row: FoodMeta) => {
+  onDelete: (row: CommentMeta) => {
     deleteTableDataApi(row.id).then(() => {
       ElMessage.success("删除成功");
       crudStore.commitQuery();
@@ -254,7 +179,7 @@ const crudStore = reactive({
           icon="vxe-icon-add"
           @click="crudStore.onShowModal()"
         >
-          新增食品
+          新增评论
         </vxe-button>
         <vxe-button status="danger" icon="vxe-icon-delete">
           批量删除
