@@ -157,6 +157,117 @@ export const constantRoutes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: "/food",
+    component: Layouts,
+    redirect: "/food/list",
+    name: "食谱模块",
+    meta: {
+      title: "食品模块",
+      elIcon: "DataBoard"
+    },
+    children: [
+      {
+        path: "list",
+        component: () => import("@/pages/food/list/index.vue"),
+        name: "食品列表",
+        meta: {
+          title: "食品列表",
+          keepAlive: true
+        }
+      },
+      {
+        path: "vxe-table",
+        component: () => import("@/pages/food/vxe-table/index.vue"),
+        name: "食品管理",
+        meta: {
+          title: "食品管理",
+          keepAlive: true
+        }
+      }
+    ]
+  },
+  {
+    path: "/feedback",
+    component: Layouts,
+    redirect: "/food/list",
+    name: "用户反馈模块",
+    meta: {
+      title: "用户反馈模块",
+      elIcon: "DataBoard"
+    },
+    children: [
+      {
+        path: "list",
+        component: () => import("@/pages/feedback/list/index.vue"),
+        name: "用户反馈列表",
+        meta: {
+          title: "用户反馈列表",
+          keepAlive: true
+        }
+      },
+    ]
+  },
+  {
+    path: "/comment",
+    component: Layouts,
+    redirect: "/comment/list",
+    name: "评论模块",
+    meta: {
+      title: "评论模块",
+      elIcon: "DataBoard"
+    },
+    children: [
+      {
+        path: "list",
+        component: () => import("@/pages/comment/list/index.vue"),
+        name: "评论列表",
+        meta: {
+          title: "评论列表",
+          keepAlive: true
+        }
+      },
+      {
+        path: "vxe-table",
+        component: () => import("@/pages/comment/vxe-table/index.vue"),
+        name: "评论管理",
+        meta: {
+          title: "评论管理",
+          keepAlive: true
+        }
+      }
+    ]
+  },
+  {
+    path: "/post",
+    component: Layouts,
+    redirect: "/post/list",
+    name: "帖子模块",
+    meta: {
+      title: "帖子模块",
+      elIcon: "DataBoard"
+    },
+    children: [
+      {
+        path: "list",
+        component: () => import("@/pages/post/list/index.vue"),
+        name: "帖子列表",
+        meta: {
+          title: "帖子列表",
+          keepAlive: true
+        }
+      },
+      {
+        path: "vxe-table",
+        component: () => import("@/pages/post/vxe-table/index.vue"),
+        name: "帖子管理",
+        meta: {
+          title: "帖子管理",
+          keepAlive: true
+        }
+      }
+    ]
+  },
+  {
     path: "/link",
     meta: {
       title: "文档链接",
